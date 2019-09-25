@@ -8,10 +8,8 @@ package com.threerings.getdown.data;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
-import java.net.Proxy;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -29,7 +27,6 @@ import com.threerings.getdown.util.*;
 import com.threerings.getdown.util.Base64;
 
 import static com.threerings.getdown.Log.log;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Parses and provide access to the information contained in the {@code getdown.txt}
@@ -648,6 +645,9 @@ public class Application
         // whether to cache code resources and launch from cache
         _useCodeCache = config.getBoolean("use_code_cache");
         _codeCacheRetentionDays = config.getInt("code_cache_retention_days", 7);
+
+        // whether to upgrade and relaunch the program when it exits.
+        _shouldResporn = config.getBoolean("respawn_on_exit");
     }
 
     /**
@@ -892,6 +892,12 @@ public class Application
     {
         return _optimumJvmArgs != null;
     }
+
+    public boolean shouldRespawn ()
+    {
+        return _shouldResporn;
+    }
+
 
     /**
      * Returns true if the app should attempt to run even if we have no Internet connection.
@@ -1772,6 +1778,8 @@ public class Application
     protected List<String> _appargs = new ArrayList<>();
 
     protected String[] _optimumJvmArgs;
+
+    protected boolean _shouldResporn = false;
 
     protected List<String> _txtJvmArgs = new ArrayList<>();
 

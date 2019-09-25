@@ -63,16 +63,31 @@ import static com.threerings.getdown.Log.log;
 public abstract class Getdown
     implements Application.StatusDisplay, RotatingBackgrounds.ImageLoader
 {
+
+    private static Getdown _getdown;
     /**
      * Starts a thread to run Getdown and ultimately (hopefully) launch the target app.
      */
     public static void run (final Getdown getdown) {
+        _getdown = getdown;
         new Thread("Getdown") {
             @Override public void run () {
                 getdown.run();
             }
         }.start();
     }
+
+    /**
+     * Starts a thread to run existing Getdown and ultimately (hopefully) launch the target app.
+     */
+    public static void rerun () {
+        new Thread("Getdown relaunch") {
+            @Override public void run () {
+                _getdown.run();
+            }
+        }.start();
+    }
+
 
     public Getdown (EnvConfig envc)
     {
@@ -185,10 +200,21 @@ public abstract class Getdown
         }
 
         _dead = false;
-        // if we fail to detect a proxy, but we're allowed to run offline, then go ahead and
-        // run the app anyway because we're prepared to cope with not being able to update
-        if (detectProxy() || _app.allowOffline()) getdown();
-        else requestProxyInfo(false);
+        while (true) {
+            // if we fail to detect a proxy, but we're allowed to run offline, then go ahead and
+            // run the app anyway because we're prepared to cope with not being able to update
+            log.info("Trying to spawn ...");
+            if (detectProxy() || _app.allowOffline()) getdown();
+            else requestProxyInfo(false);
+
+            if (!_app.shouldRespawn()) {
+                log.info("Not respawning ...");
+                break;
+            } else {
+                log.info("We are respawning ...");
+            }
+        }
+
     }
 
     protected boolean detectProxy () {
@@ -723,11 +749,15 @@ public abstract class Getdown
                 proc.getInputStream().close();
                 // close standard out, since we're not going to write to anything to it anyway
                 proc.getOutputStream().close();
-
-                // on Windows 98 and ME we need to stick around and read the output of stderr lest
-                // the process fill its output buffer and choke, yay!
                 final InputStream stderr = proc.getErrorStream();
-                if (LaunchUtil.mustMonitorChildren()) {
+                if (_app.shouldRespawn()) {
+                    disposeContainer();
+                    _container = null;
+                    log.info("Process exited: " + proc.waitFor() + " will respawn ... ");
+
+                } else if (LaunchUtil.mustMonitorChildren()) {
+                    // on Windows 98 and ME we need to stick around and read the output of stderr lest
+                    // the process fill its output buffer and choke, yay!
                     // close our window if it's around
                     disposeContainer();
                     _container = null;
@@ -759,9 +789,11 @@ public abstract class Getdown
                 }
             }
 
-            // pump the percent up to 100%
-            setStatusAsync(null, 100, -1L, false);
-            exit(0);
+            if (!_app.shouldRespawn()) {
+                // pump the percent up to 100%
+                setStatusAsync(null, 100, -1L, false);
+                exit(0);
+            }
 
         } catch (Exception e) {
             log.warning("launch() failed.", e);
