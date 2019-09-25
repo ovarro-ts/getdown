@@ -31,6 +31,26 @@ public final class EnvConfig {
         }
     }
 
+    public static String convertName(String str, boolean isPath)
+    {
+        char c[] = str.toCharArray();
+        char r[] = new char[c.length];
+        int rLen = 0;
+        for (int i=0; i<c.length; i++) {
+            // Accept a-z, A-Z, 0-9
+            if (((c[i] >= 'a') && (c[i] <= 'z')) ||
+                ((c[i] >= 'A') && (c[i] <= 'Z')) ||
+                ((c[i] >= '0') && (c[i] <= '9')) ||
+                (c[i] == '_') ||
+                (isPath && ((c[i] == '/') || (c[i] == '.'))))
+                r[rLen++] = c[i];
+            else if ((c[i] == ' ') || (c[i] == '\t'))
+                r[rLen++] = '_'; // Convert to underscore
+            // else ignore
+        }
+        return new String(r, 0, rLen);
+    }
+
     /**
      * Creates an environment config, obtaining information (in order) from the following sources:
      *
@@ -62,6 +82,11 @@ public final class EnvConfig {
                 appDir = appDir.replace(USER_HOME_KEY, System.getProperty("user.home"));
                 appDirProv = "bootstrap.properties";
             }
+
+            if (appBase.startsWith("http")) {
+                // Wait a minute this is not an appbase this is a
+            }
+
             if (bundle.containsKey("appid")) {
                 appId = bundle.getString("appid");
                 appIdProv = "bootstrap.properties";
@@ -70,6 +95,9 @@ public final class EnvConfig {
                 appBase = bundle.getString("appbase");
                 appBaseProv = "bootstrap.properties";
             }
+
+
+
             // if any system properties are specified (keys prefixed with sys.), set those up
             for (String key : bundle.keySet()) {
                 if (key.startsWith("sys.")) {
@@ -137,6 +165,14 @@ public final class EnvConfig {
                 notes.add(Note.warn("Ignoring 'appid' command line arg, have appid via '" +
                                     appIdProv + "'"));
             }
+        }
+
+        if (appDir != null && appDir.startsWith(GETDOWN_URL)) {
+            // Wait a minute this is not an appDir this is an appBase ...
+            // Lets set the appDir to a folder under the home directory which is based on the appBase
+            // and get the getdown.txt from the appBase and start from there.
+            appBase = appDir.substring(GETDOWN_URL.length());
+            appDir = System.getProperty("user.home") + "/.getdown/" + convertName( appBase, false);
         }
 
         // if no appdir was provided, default to the current working directory
@@ -227,4 +263,5 @@ public final class EnvConfig {
     }
 
     private static final String USER_HOME_KEY = "${user.home}";
+    private static final String GETDOWN_URL = "getdown://";
 }
