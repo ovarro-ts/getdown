@@ -127,6 +127,7 @@ public abstract class Getdown
         }
         _app = new Application(envc);
         _startup = System.currentTimeMillis();
+        _constRetry = envc.appArgs.contains("constRetry");
     }
 
     /**
@@ -903,6 +904,9 @@ public abstract class Getdown
     }
 
     private void fail (Exception e) {
+        boolean retryIndef = true;
+        if (retryIndef)
+            getdown();
         String msg = e.getMessage();
         if (msg == null) {
             msg = MessageUtil.compose("m.unknown_error", _ifc.installError);
@@ -1128,6 +1132,7 @@ public abstract class Getdown
     protected boolean _launchInSilent;
     protected boolean _noUpdate;
     protected long _startup;
+    protected boolean _constRetry;
 
     protected Set<Resource> _toInstallResources;
     protected boolean _readyToInstall;

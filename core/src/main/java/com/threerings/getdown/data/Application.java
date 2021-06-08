@@ -914,7 +914,11 @@ public class Application
     public void attemptRecovery (StatusDisplay status)
         throws IOException
     {
-        status.updateStatus("m.updating_metadata");
+        //Check continuous retry
+        if(_envc.appArgs.contains("constRetry"))
+            status.updateStatus("m.FailedRetrying");
+        else
+            status.updateStatus("m.updating_metadata");
         downloadConfigFile();
     }
 
