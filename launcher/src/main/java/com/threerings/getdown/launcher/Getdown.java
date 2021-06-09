@@ -128,6 +128,7 @@ public abstract class Getdown
         _app = new Application(envc);
         _startup = System.currentTimeMillis();
         _constRetry = envc.appArgs.contains("constRetry");
+        _disableProxy = envc.appArgs.contains("disableProxy");
     }
 
     /**
@@ -220,6 +221,9 @@ public abstract class Getdown
 
     protected boolean detectProxy () {
         // first we have to initialize our application to get the appbase URL, etc.
+        log.info("Check arguments to see if proxy is disable");
+        if(_disableProxy)
+            return true;
         log.info("Checking whether we need to use a proxy...");
         try {
             readConfig(true);
@@ -1133,6 +1137,7 @@ public abstract class Getdown
     protected boolean _noUpdate;
     protected long _startup;
     protected boolean _constRetry;
+    protected boolean _disableProxy;
 
     protected Set<Resource> _toInstallResources;
     protected boolean _readyToInstall;
