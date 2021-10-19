@@ -241,6 +241,16 @@ public class Config
     }
 
     /**
+     * Sets the value of a config string
+     * @param name name of the field
+     * @param value value of the field
+     */
+    public void setString(String name, String value) {
+        _data.put(name, value);
+    }
+
+
+    /**
      * Returns the specified config value as a string, or {@code null}.
      */
     public String getString (String name) {

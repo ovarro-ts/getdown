@@ -264,6 +264,8 @@ public class Application
             config = new Config(cdata);
         }
 
+        config.setString("envappbase", envc.appBase);
+
         return config;
     }
 
@@ -594,6 +596,7 @@ public class Application
         // first extract our version information
         _version = config.getLong("version", -1L);
 
+        _envappbase = config.getString("envappbase");
         // determine our application base, this way if anything goes wrong later in the
         // process, our caller can use the appbase to download a new configuration file
         _appbase = config.getString("appbase");
@@ -814,6 +817,9 @@ public class Application
      */
     public URL getRemoteURL (String path) throws MalformedURLException
     {
+        if (path.equals(CONFIG_FILE) && _envappbase != null && _envappbase.contains(path+"?")) {
+            return new URL(_envappbase);
+        }
         return new URL(_vappbase, encodePath(path));
     }
 
@@ -1741,6 +1747,7 @@ public class Application
     protected long _version = -1;
     protected long _targetVersion = -1;
     protected String _appbase;
+    protected String _envappbase;
     protected URL _vappbase;
     protected URL _latest;
     protected String _class;

@@ -171,8 +171,15 @@ public final class EnvConfig {
             // Wait a minute this is not an appDir this is an appBase ...
             // Lets set the appDir to a folder under the home directory which is based on the appBase
             // and get the getdown.txt from the appBase and start from there.
+
             appBase = appDir.substring(GETDOWN_URL.length());
-            appDir = System.getProperty("user.home") + "/.getdown/" + convertName( appBase, false);
+            String cacheDir;
+            if (appDir.contains(Application.CONFIG_FILE)) {
+                cacheDir = appBase.substring(0, appBase.indexOf(Application.CONFIG_FILE));
+            } else {
+                cacheDir = appBase;
+            }
+            appDir = System.getProperty("user.home") + "/.getdown/" + convertName( cacheDir, false);
         }
 
         // if no appdir was provided, default to the current working directory
