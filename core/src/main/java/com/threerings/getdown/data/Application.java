@@ -269,6 +269,24 @@ public class Application
         return config;
     }
 
+    /**
+     * Invalidates the {@code getdown.txt} config file.
+     */
+    public static void invalidateConfig(String appDir) {
+        File cfgfile = new File(appDir, CONFIG_FILE);
+        if (cfgfile.exists()) {
+            File cfgfileUsed = new File(appDir, CONFIG_FILE + "_old");
+            if (cfgfileUsed.exists() && cfgfileUsed.delete()) {
+                log.info("Removed old " + CONFIG_FILE);
+            }
+            if (cfgfile.renameTo(cfgfileUsed)) {
+                log.info("Moved " + CONFIG_FILE + " to " + CONFIG_FILE + "_old");
+            } else {
+                log.error("Failed to rename " + CONFIG_FILE + " to " + CONFIG_FILE + "_old");
+            }
+        }
+    }
+
     /** A helper that is used to do HTTP downloads. This must be configured prior to using the
       * application instance. Yes this is a public mutable field, no I'm not going to create a
       * getter and setter just to pretend like that's not the case. */
