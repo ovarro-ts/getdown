@@ -455,6 +455,9 @@ public abstract class Getdown
                 _readyToInstall = true;
                 install();
 
+                //Clean up the getdown.txt file since it could contain out of date information on the next launch.
+                Application.invalidateConfig(_app.getAppDir().getPath());
+
                 // Only launch if we aren't in silent mode. Some mystery program starting out
                 // of the blue would be disconcerting.
                 if (!_silent || _launchInSilent) {
