@@ -241,12 +241,6 @@ public class Application
             if (cfgfile.exists()) {
                 config = Config.parseConfig(cfgfile, opts);
             }
-            // otherwise, try reading data from our backup config file; thanks to funny windows
-            // bullshit, we have to do this backup file fiddling in case we got screwed while
-            // updating getdown.txt during normal operation
-            else if ((cfgfile = new File(envc.appDir, Application.CONFIG_FILE + "_old")).exists()) {
-                config = Config.parseConfig(cfgfile, opts);
-            }
             // otherwise, issue a warning that we found no getdown file
             else {
                 log.info("Found no getdown.txt file", "appdir", envc.appDir);
@@ -273,16 +267,21 @@ public class Application
      * Invalidates the {@code getdown.txt} config file.
      */
     public static void invalidateConfig(String appDir) {
+        File cfgfileOld = new File(appDir, CONFIG_FILE + "_old");
+        if (cfgfileOld.exists() && cfgfileOld.delete()) {
+            log.info("Removed old " + CONFIG_FILE + "_old");
+        }
+
         File cfgfile = new File(appDir, CONFIG_FILE);
         if (cfgfile.exists()) {
-            File cfgfileUsed = new File(appDir, CONFIG_FILE + "_old");
+            File cfgfileUsed = new File(appDir, CONFIG_FILE + "_used");
             if (cfgfileUsed.exists() && cfgfileUsed.delete()) {
                 log.info("Removed old " + CONFIG_FILE);
             }
             if (cfgfile.renameTo(cfgfileUsed)) {
-                log.info("Moved " + CONFIG_FILE + " to " + CONFIG_FILE + "_old");
+                log.info("Moved " + CONFIG_FILE + " to " + CONFIG_FILE + "_used");
             } else {
-                log.error("Failed to rename " + CONFIG_FILE + " to " + CONFIG_FILE + "_old");
+                log.error("Failed to rename " + CONFIG_FILE + " to " + CONFIG_FILE + "_used");
             }
         }
     }
