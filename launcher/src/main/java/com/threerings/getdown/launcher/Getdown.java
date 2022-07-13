@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
@@ -127,7 +129,6 @@ public abstract class Getdown
         }
         _app = new Application(envc);
         _startup = System.currentTimeMillis();
-        _constRetry = envc.appArgs.contains("constRetry");
         _disableProxy = envc.appArgs.contains("disableProxy");
     }
 
@@ -911,18 +912,19 @@ public abstract class Getdown
     }
 
     private void fail (Exception e) {
-        boolean retryIndef = true;
-        if (retryIndef)
-            getdown();
+        long delay = _attemptNumber * 5 + 1;
+        log.info("Retrying getdown() in " + delay + " seconds");
+        SCHEDULED_EXECUTOR_SERVICE.schedule(this::getdown, delay, TimeUnit.SECONDS);
+        _attemptNumber++;
         String msg = e.getMessage();
         if (msg == null) {
-            msg = MessageUtil.compose("m.unknown_error", _ifc.installError);
+            msg = MessageUtil.compose("m.unknown_error", delay, _ifc.installError);
         } else if (!msg.startsWith("m.")) {
             // try to do something sensible based on the type of error
             msg = MessageUtil.taint(msg);
             msg = e instanceof FileNotFoundException ?
-                MessageUtil.compose("m.missing_resource", msg, _ifc.installError) :
-                MessageUtil.compose("m.init_error", msg, _ifc.installError);
+                MessageUtil.compose("m.missing_resource", msg, delay, _ifc.installError) :
+                MessageUtil.compose("m.init_error", msg, delay, _ifc.installError);
         }
         // since we're dead, clear off the 'time remaining' label along with displaying the error
         fail(msg);
@@ -1139,7 +1141,6 @@ public abstract class Getdown
     protected boolean _launchInSilent;
     protected boolean _noUpdate;
     protected long _startup;
-    protected boolean _constRetry;
     protected boolean _disableProxy;
 
     protected Set<Resource> _toInstallResources;
@@ -1155,7 +1156,10 @@ public abstract class Getdown
     protected int _stepMinPercent;
     protected int _lastGlobalPercent;
     protected int _uiDisplayPercent;
+    protected long _attemptNumber = 0;
 
     protected static final int MAX_LOOPS = 5;
     protected static final long FALLBACK_CHECK_TIME = 1000L;
+    protected static final ScheduledExecutorService SCHEDULED_EXECUTOR_SERVICE =
+        new ScheduledThreadPoolExecutor(1);
 }
