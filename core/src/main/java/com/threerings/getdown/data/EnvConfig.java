@@ -167,6 +167,11 @@ public final class EnvConfig {
             }
         }
 
+        if (appDir != null && appDir.startsWith(GETDOWNQ_URL)) {
+            System.setProperty("silent", "launch");
+            appDir = GETDOWN_URL + appDir.substring(GETDOWNQ_URL.length());
+        }
+
         if (appDir != null && appDir.startsWith(GETDOWN_URL)) {
             // Wait a minute this is not an appDir this is an appBase ...
             // Lets set the appDir to a folder under the home directory which is based on the appBase
@@ -271,4 +276,5 @@ public final class EnvConfig {
 
     private static final String USER_HOME_KEY = "${user.home}";
     private static final String GETDOWN_URL = "getdown://";
+    private static final String GETDOWNQ_URL = "getdownq://";
 }
