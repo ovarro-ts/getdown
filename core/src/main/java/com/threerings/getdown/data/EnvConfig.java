@@ -11,11 +11,14 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.threerings.getdown.util.StringUtil;
 
 /** Configuration that comes from our "environment" (command line args, sys props, etc.). */
 public final class EnvConfig {
+    private static final Pattern APPBASE_PATTERN = Pattern.compile("^http(s)?(:)?(//)?.+$", Pattern.CASE_INSENSITIVE);
 
     /** Used to report problems or feedback by {@link #create}. */
     public static final class Note {
@@ -51,6 +54,40 @@ public final class EnvConfig {
         return new String(r, 0, rLen);
     }
 
+    private static String fixAppBaseProtocol(String appBase, List<Note> notes) {
+        Matcher matcher = APPBASE_PATTERN.matcher(appBase);
+
+        if (matcher.matches()) {
+            boolean isSecure = "s".equalsIgnoreCase(matcher.group(1));
+            boolean hasColon = ":".equalsIgnoreCase(matcher.group(2));
+            boolean hasSlashes = "//".equalsIgnoreCase(matcher.group(3));
+
+            if (hasColon && hasSlashes) // Looks good
+                return appBase;
+
+            String newAppBase = "";
+            int end;
+            if (hasColon) {
+                end = isSecure ? 6 : 5;
+                newAppBase += appBase.substring(0, end);
+            } else {
+                end = isSecure ? 5 : 4;
+                newAppBase += appBase.substring(0, end) + ":";
+            }
+
+            if (!hasSlashes)
+                newAppBase += "//";
+
+            newAppBase += appBase.substring(end);
+
+            notes.add(Note.info("Rewriting appBase from " + appBase + " to " + newAppBase));
+
+            return newAppBase;
+        }
+
+    return appBase;
+    }
+
     /**
      * Creates an environment config, obtaining information (in order) from the following sources:
      *
@@ -83,9 +120,6 @@ public final class EnvConfig {
                 appDirProv = "bootstrap.properties";
             }
 
-            if (appBase.startsWith("http")) {
-                // Wait a minute this is not an appbase this is a
-            }
 
             if (bundle.containsKey("appid")) {
                 appId = bundle.getString("appid");
@@ -95,8 +129,6 @@ public final class EnvConfig {
                 appBase = bundle.getString("appbase");
                 appBaseProv = "bootstrap.properties";
             }
-
-
 
             // if any system properties are specified (keys prefixed with sys.), set those up
             for (String key : bundle.keySet()) {
@@ -173,6 +205,8 @@ public final class EnvConfig {
             // and get the getdown.txt from the appBase and start from there.
 
             appBase = appDir.substring(GETDOWN_URL.length());
+            appBase = fixAppBaseProtocol(appBase, notes);
+
             String cacheDir;
             if (appDir.contains(Application.CONFIG_FILE)) {
                 cacheDir = appBase.substring(0, appBase.indexOf(Application.CONFIG_FILE));
